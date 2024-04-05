@@ -1,0 +1,17 @@
+main {
+  .ListContainer {
+    .TodoList {
+      border: 2px dashed papayawhip;
+    }
+    .DoneList {
+      border: 2px dashed salmon;
+      color: coral;
+    }
+  }
+}
+
+.App {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}

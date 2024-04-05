@@ -1,0 +1,9 @@
+{
+  "development": {
+    "username": "sesac",
+    "password": "lion0923!",
+    "database": "sesac",
+    "host": "127.0.0.1",
+    "dialect": "mysql"
+  }
+}
