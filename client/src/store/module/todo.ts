@@ -9,6 +9,10 @@ const INIT = "todo/INIT" as const;
 const CREATE = "todo/CREATE" as const;
 const DONE = "todo/DONE" as const;
 
+// [추가] todo 삭제에 대한 type
+const DELETE = "todo/DELETE" as const;
+const UPDATE = "todo/UPDATE" as const;
+
 let count = initialState.list.length;
 initialState["nextID"] = count;
 
@@ -25,16 +29,19 @@ export const create = (payload: { id: number; text: string }) => ({
 // id, // number
 export const done = (id: number) => ({ type: DONE, id });
 
+// [추가] todo 삭제 및 수정에 대한 action
+export const del = (id: number) => ({ type: DELETE, id });
+
+export const update = (id: number, text: string) => ({
+  type: UPDATE,
+  id,
+  text,
+});
+
 interface Init {
   type: typeof INIT;
   data: Todo[];
 }
-
-// interface Action {
-//   type: string;
-//   id?: number;
-//   payload?: { id: number; text: string };
-// }
 
 interface Create {
   type: typeof CREATE;
@@ -45,7 +52,19 @@ interface Done {
   id: number;
 }
 
-type Action = Create | Done | Init;
+// [추가] todo 삭제 및 글 수정에 대한 interface
+interface Delete {
+  type: typeof DELETE;
+  id: number;
+}
+
+interface Update {
+  type: typeof UPDATE;
+  id: number;
+  text: string;
+}
+
+type Action = Create | Done | Init | Delete | Update;
 
 export function todoReducer(state = initialState, action: Action) {
   switch (action.type) {
@@ -83,20 +102,18 @@ export function todoReducer(state = initialState, action: Action) {
           }
         }),
       };
-    // case UNDO:
-    //   return {
-    //     ...state,
-    //     list: state.list.map((li) => {
-    //       if (li.id === action.id) {
-    //         return {
-    //           ...li,
-    //           done: false,
-    //         };
-    //       } else {
-    //         return li;
-    //       }
-    //     }),
-    //   };
+    case DELETE:
+      return {
+        ...state,
+        list: state.list.filter((li) => li.id !== action.id),
+      };
+    case UPDATE:
+      return {
+        ...state,
+        list: state.list.map((li) =>
+          li.id === action.id ? { ...li, text: action.text } : li
+        ),
+      };
     default:
       return state;
   }
