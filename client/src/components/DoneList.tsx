@@ -1,9 +1,10 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useRef } from "react";
-import { create, done } from "../store/module/todo";
+import { del, undo } from "../store/module/todo";
 import { ReduxState } from "../types/interface";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
+import axios from "axios";
 
 export default function DoneList() {
   const donList = useSelector((state: ReduxState) => state.todo.list).filter(
@@ -19,16 +20,17 @@ export default function DoneList() {
   const nextID = useSelector((state: ReduxState) => {
     return state.todo.nextID;
   });
-  const createTodo = () => {
-    // dispatch({
-    //   type: "todo/CREATE",
-    //   payload: { id: 3, text: todoRef.current.value },
-    // });
-    if (nextID && todoRef.current) {
-      dispatch(create({ id: donList.length, text: todoRef.current.value }));
-      dispatch(create({ id: nextID, text: todoRef.current.value }));
-      todoRef.current.value = "";
-    }
+
+  const deleteTodo = async (todoId: number) => {
+    dispatch(del(todoId));
+
+    await axios.delete(`${process.env.REACT_APP_API_SERVER}/todo/${todoId}`);
+  };
+
+  const changeUndo = async (todoId: number) => {
+    dispatch(undo(todoId));
+
+    await axios.patch(`${process.env.REACT_APP_API_SERVER}/todo/${todoId}`);
   };
   return (
     <section className="DoneList">
@@ -41,9 +43,17 @@ export default function DoneList() {
           {donList.map((todo) => {
             return (
               <li key={todo.id}>
-                <FontAwesomeIcon icon={faTrash} />
+                <input
+                  type="checkbox"
+                  checked={todo.done}
+                  onChange={() => changeUndo(todo.id)}
+                />
                 <span>{todo.text}</span>
-                <button>다시 하기</button>
+                <button onClick={() => changeUndo(todo.id)}>다시하기</button>
+                <FontAwesomeIcon
+                  icon={faTrash}
+                  onClick={() => deleteTodo(todo.id)}
+                />
               </li>
             );
           })}

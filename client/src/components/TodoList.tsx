@@ -1,15 +1,14 @@
 import { useSelector, useDispatch } from "react-redux";
 import { useRef, useState } from "react";
-import { create, del, done } from "../store/module/todo";
+import { create, del, done, update } from "../store/module/todo";
 import { ReduxState } from "../types/interface";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 
 export default function TodoList() {
-  const [disabled, setDisabled] = useState(true);
-  const [buttonText, setButtonText] = useState("Update");
-  const todos = useRef<(HTMLInputElement | null)[]>([]);
+  const [editId, setEditId] = useState<number | null>(null); // 수정 중인 할 일의 ID
+  const [editText, setEditText] = useState<string>(""); // 수정 중인 할 일의 텍스트
 
   const list = useSelector((state: ReduxState) => state.todo.list);
   const todoList = list.filter((li) => li.done === false);
@@ -19,23 +18,7 @@ export default function TodoList() {
   const todoRef = useRef<HTMLInputElement>(null);
   const nextID = useSelector((state: ReduxState) => state.todo.nextID);
 
-  const handleButtonClick = () => {
-    if (disabled) {
-      setDisabled(false);
-      setButtonText("Save");
-      todos.current[0]?.focus();
-    } else {
-      setDisabled(true);
-      setButtonText("Update");
-    }
-  };
-
   const createTodo = () => {
-    // dispatch({
-    //   type: "todo/CREATE",
-    //   payload: { id: 3, text: todoRef.current.value },
-    // });
-    // dispatch(create({ id: list.length, text: todoRef.current.value }));
     if (todoRef.current && todoRef.current.value.trim() !== "" && nextID) {
       dispatch(create({ id: nextID, text: todoRef.current.value }));
       axios.post(`${process.env.REACT_APP_API_SERVER}/todo`, {
@@ -61,6 +44,28 @@ export default function TodoList() {
 
     await axios.delete(`${process.env.REACT_APP_API_SERVER}/todo/${todoId}`);
   };
+
+  const startEdit = (id: number, text: string) => {
+    setEditId(id);
+    setEditText(text);
+  };
+
+  const finishEdit = async (id: number) => {
+    if (editId !== null && editText.trim() !== "") {
+      // 수정된 내용을 dispatch하여 업데이트
+      dispatch(update(editId, editText));
+      // PATCH /api-server/content
+
+      await axios.patch(`${process.env.REACT_APP_API_SERVER}/content`, {
+        text: editText,
+        id: editId,
+      });
+      setEditId(null);
+      setEditText("");
+    }
+    // 수정 중인 할 일의 ID와 수정 중인 텍스트 초기화
+  };
+
   return (
     <section className="TodoList">
       <h2>오늘의 할 일</h2>
@@ -81,13 +86,28 @@ export default function TodoList() {
             return (
               <li key={todo.id}>
                 <input
-                  type="text"
-                  value={todo.text}
-                  disabled
-                  ref={(el) => (todos.current[todo.id] = el)}
+                  type="checkbox"
+                  checked={todo.done}
+                  onChange={() => changeDone(todo.id)}
                 />
-                <button onClick={handleButtonClick}>{buttonText}</button>
-                <button onClick={() => changeDone(todo.id)}>완료</button>
+                {editId === todo.id ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                    />
+                    <button onClick={() => finishEdit(todo.id)}>저장</button>
+                  </>
+                ) : (
+                  <>
+                    <span>{todo.text}</span>
+                    <button onClick={() => changeDone(todo.id)}>완료</button>
+                    <button onClick={() => startEdit(todo.id, todo.text)}>
+                      수정
+                    </button>
+                  </>
+                )}
                 <FontAwesomeIcon
                   icon={faTrash}
                   className="trashIcon"

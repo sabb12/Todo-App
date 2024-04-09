@@ -8,6 +8,7 @@ const initialState: TodoState = {
 const INIT = "todo/INIT" as const;
 const CREATE = "todo/CREATE" as const;
 const DONE = "todo/DONE" as const;
+const UNDO = "todo/UNDO" as const;
 
 // [추가] todo 삭제에 대한 type
 const DELETE = "todo/DELETE" as const;
@@ -28,6 +29,7 @@ export const create = (payload: { id: number; text: string }) => ({
 });
 // id, // number
 export const done = (id: number) => ({ type: DONE, id });
+export const undo = (id: number) => ({ type: UNDO, id });
 
 // [추가] todo 삭제 및 수정에 대한 action
 export const del = (id: number) => ({ type: DELETE, id });
@@ -52,6 +54,11 @@ interface Done {
   id: number;
 }
 
+interface Undo {
+  type: typeof UNDO;
+  id: number;
+}
+
 // [추가] todo 삭제 및 글 수정에 대한 interface
 interface Delete {
   type: typeof DELETE;
@@ -64,7 +71,7 @@ interface Update {
   text: string;
 }
 
-type Action = Create | Done | Init | Delete | Update;
+type Action = Create | Done | Undo | Init | Delete | Update;
 
 export function todoReducer(state = initialState, action: Action) {
   switch (action.type) {
@@ -96,6 +103,20 @@ export function todoReducer(state = initialState, action: Action) {
             return {
               ...li,
               done: true,
+            };
+          } else {
+            return li;
+          }
+        }),
+      };
+    case UNDO:
+      return {
+        ...state,
+        list: state.list.map((li) => {
+          if (li.id === action.id) {
+            return {
+              ...li,
+              done: false,
             };
           } else {
             return li;

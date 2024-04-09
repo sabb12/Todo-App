@@ -41,7 +41,7 @@ exports.postTodo = async (req, res) => {
 };
 
 // PATCH /api-server/todo/:todoId
-// 냉ㅇ수정이 아닌 todo 상태 변경
+// 수정이 아닌 todo 상태 변경
 exports.patchDoneState = async (req, res) => {
   try {
     const { todoId } = req.params;
@@ -51,6 +51,26 @@ exports.patchDoneState = async (req, res) => {
         sequelize.literal: query를 날릴(?) 수 있도록 도와줌
       */
       { done: sequelize.literal("NOT done") }, // 현재값과 반대로 하기 위해서 실제 sql query문 사용
+      { where: { id: todoId } }
+    );
+    isUpdated
+      ? res.status(200).send({ isSucess: true })
+      : res.status(404).send({ isSucess: false });
+  } catch (err) {
+    console.log("server err!", err);
+    res.status(500).send("SERVER ERROR!, 관리자에게 문의하세요");
+  }
+};
+
+exports.patchUndoState = async (req, res) => {
+  try {
+    const { todoId } = req.params;
+    const [isUpdated] = await Todo.update(
+      /*
+        sequlize import 해와야 합니다
+        sequelize.literal: query를 날릴(?) 수 있도록 도와줌
+      */
+      { done: false }, // 현재값과 반대로 하기 위해서 실제 sql query문 사용
       { where: { id: todoId } }
     );
     isUpdated
